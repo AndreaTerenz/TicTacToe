@@ -1,0 +1,41 @@
+[gd_scene load_steps=3 format=3 uid="uid://ddyeaimowxadd"]
+
+[ext_resource type="Script" path="res://WebSocket.gd" id="1_8onfo"]
+
+[sub_resource type="GDScript" id="GDScript_1c0ut"]
+script/source = "extends Control
+
+@onready
+var socket := $WebSocket
+@onready
+var label := %ReceivedLabel
+@onready
+var line := %LineEdit
+
+func _ready():
+	pass
+	
+func _on_web_socket_connected(h, p):
+	print(\"Socket connected to %s:%s\" % [h,p])
+
+func _on_web_socket_received(data):
+	if data != null and len(data) > 0:
+		label.text = data.get_string_from_ascii()
+
+func _on_send_button_pressed():
+	socket.send_string(line.text)
+"
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_1c0ut")
+
+[node name="WebSocket" type="Node" parent="."]
+script = ExtResource("1_8onfo")
+host = "127.0.0.1:5000"
+route = "/echo"
