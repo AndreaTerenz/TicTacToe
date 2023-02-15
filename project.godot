@@ -15,3 +15,7 @@ config/description="Enter an interesting project description here!"
 run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.0")
 config/icon="res://icon.png"
+
+[autoload]
+
+Globals="*res://Globals.gd"

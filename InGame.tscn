@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3 uid="uid://dsk2hw0maog87"]
+
+[sub_resource type="GDScript" id="GDScript_g2x5t"]
+script/source = "extends Control
+
+@onready var id_label = %IDLabel
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	id_label.text = \"Lobby ID: %s\" % Globals.lobby_id
+"
+
+[sub_resource type="LabelSettings" id="LabelSettings_2td2f"]
+font_size = 28
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_g2x5t")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -127.0
+offset_top = 17.0
+offset_right = 127.0
+offset_bottom = 79.0
+grow_horizontal = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 15
+
+[node name="IDLabel" type="Label" parent="PanelContainer/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Lobby ID: ---"
+label_settings = SubResource("LabelSettings_2td2f")
+horizontal_alignment = 1

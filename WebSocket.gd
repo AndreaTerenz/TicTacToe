@@ -1,7 +1,9 @@
+@icon("res://WebSocket.svg")
 class_name WebSocket
 extends Node
 
 signal connected(url)
+signal connect_failed
 signal received(data)
 signal closing
 signal closed(code, reason)
@@ -11,6 +13,7 @@ signal closed(code, reason)
 @export var connect_on_ready := true
 @export var use_WSS := true
 @export_range(0, 128) var receive_limit : int = 0
+@export_range(0, 300) var connection_timeout : int = 10
 
 var full_url := ""
 
@@ -22,10 +25,18 @@ var socket_state:
 	get:
 		socket.poll()
 		return socket.get_ready_state()
+var connect_timedout : bool :
+	get:
+		return connect_timer.is_stopped() and connection_timeout > 0
 var socket_connected := false
 var closing_started := false
 
+var connect_timer := Timer.new()
+
 func _ready():
+	add_child(connect_timer)
+	connect_timer.one_shot = true
+	
 	if connect_on_ready:
 		connect_socket()
 
@@ -34,11 +45,13 @@ func connect_socket(h = host, r = route):
 		push_error("Can't connect a socket already in use!")
 		return false
 	
+	connect_timer.start(connection_timeout)
+	set_process(true)
+	
 	host = h
 	var protocol = "wss" if use_WSS else "ws"
 	full_url = "%s://%s/%s" % [protocol, host, route.trim_prefix("/")]
-	
-	print(full_url)
+
 	var err = socket.connect_to_url(full_url)
 	if err != OK: # or socket_state != WebSocketPeer.STATE_OPEN:
 		push_error("Unable to connect socket! (tried connecting to %s)" % [full_url])
@@ -83,11 +96,14 @@ func _process(delta):
 	
 	match socket_state:
 		WebSocketPeer.STATE_CONNECTING:
-			pass
+			if connect_timedout:
+				socket.close(1001, "Connection timeout")
+				connect_failed.emit()
 		WebSocketPeer.STATE_OPEN:
 			if not socket_connected:
 				socket_connected = true
 				closing_started = false
+				connect_timer.stop()
 				connected.emit(full_url)
 			
 			var available = socket.get_available_packet_count()
@@ -107,5 +123,5 @@ func _process(delta):
 		WebSocketPeer.STATE_CLOSED:
 			var code = socket.get_close_code()
 			var reason = socket.get_close_reason()
-			print("WebSocket closed with code: %d, reason %s. Clean: %s" % [code, reason, code != -1])
 			closed.emit(code, reason)
+			set_process(false)
