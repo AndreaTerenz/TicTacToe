@@ -7,23 +7,19 @@ script/source = "extends Control
 
 @onready
 var socket := $WebSocket
-@onready
-var label := %ReceivedLabel
-@onready
-var line := %LineEdit
 
 func _ready():
 	pass
 	
-func _on_web_socket_connected(h, p):
-	print(\"Socket connected to %s:%s\" % [h,p])
-
+func _on_web_socket_connected(url):
+	print(\"Socket connected to %s\" % [url])
+	socket.send_string(\"Aoooo\")
+	
 func _on_web_socket_received(data):
 	if data != null and len(data) > 0:
-		label.text = data.get_string_from_ascii()
-
-func _on_send_button_pressed():
-	socket.send_string(line.text)
+		print(data.get_string_from_ascii())
+	await get_tree().create_timer(1.0).timeout
+	socket.send_string(\"googooogaga\")
 "
 
 [node name="Control" type="Control"]
@@ -37,5 +33,8 @@ script = SubResource("GDScript_1c0ut")
 
 [node name="WebSocket" type="Node" parent="."]
 script = ExtResource("1_8onfo")
-host = "127.0.0.1:5000"
+host = "flask-hello-world-75s7.onrender.com"
 route = "/echo"
+
+[connection signal="connected" from="WebSocket" to="." method="_on_web_socket_connected"]
+[connection signal="received" from="WebSocket" to="." method="_on_web_socket_received"]

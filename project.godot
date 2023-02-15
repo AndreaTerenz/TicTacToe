@@ -12,5 +12,6 @@ config_version=5
 
 config/name="TicTacToe"
 config/description="Enter an interesting project description here!"
+run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.0")
 config/icon="res://icon.png"
