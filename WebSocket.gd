@@ -2,6 +2,12 @@
 class_name WebSocket
 extends Node
 
+enum AUTOCONNECT_MODE {
+	NONE,
+	SELF_READY,
+	PARENT_READY
+}
+
 signal connected(url)
 signal connect_failed
 signal received(data)
@@ -10,7 +16,7 @@ signal closed(code, reason)
 
 @export var host := "127.0.0.1"
 @export var route := "/"
-@export var connect_on_ready := true
+@export var autoconnect_mode := AUTOCONNECT_MODE.NONE
 @export var use_WSS := true
 @export_range(0, 128) var receive_limit : int = 0
 @export_range(0, 300) var connection_timeout : int = 10
@@ -37,8 +43,11 @@ func _ready():
 	add_child(connect_timer)
 	connect_timer.one_shot = true
 	
-	if connect_on_ready:
+	if autoconnect_mode != AUTOCONNECT_MODE.NONE:
+		if autoconnect_mode == AUTOCONNECT_MODE.PARENT_READY:
+			await get_parent().ready
 		connect_socket()
+		
 
 func connect_socket(h = host, r = route):
 	if socket_connected:
@@ -69,6 +78,10 @@ func receive():
 		buffer.append_array(socket.get_packet())
 		
 	return buffer
+	
+func send_dict(dict_to_send: Dictionary):
+	var s : String = JSON.stringify(dict_to_send)
+	send_string(s)
 	
 func send_string(str_to_send : String):
 	print("Sending: %s" % str_to_send)
