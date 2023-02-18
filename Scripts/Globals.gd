@@ -5,20 +5,27 @@ signal socket_closed(code, reason)
 signal socket_received(data)
 signal socket_connect_failed
 
-var hostname := "127.0.0.1:5000"
+signal player_joined(player)
+signal player_left(players)
+
+var hostname := "flask-hello-world-75s7.onrender.com"
 var ws_route := "/game-socket"
-# False only for local server
-var wss := false
+var wss := true
+
+var local_mode := true
 
 var in_game_scn := preload("res://InGame.tscn")
 var username := ""
 var lobby_id := ""
 var players : Array = []
-var awaiting_ok := false
 var socket := WebSocket.new()
 
 func _ready():
 	print("ONGABONGA")
+	
+	if local_mode:
+		hostname = "127.0.0.1:5000"
+		wss = false
 	
 	socket.autoconnect_mode = WebSocket.AUTOCONNECT_MODE.PARENT_READY
 	add_child(socket)
@@ -33,33 +40,43 @@ func _ready():
 	socket.connect_failed.connect(_on_web_socket_connect_failed)
 
 func _on_web_socket_connected(url):
-	print("Socket connected to %s" % [url])
+	print("[%s] Socket connected to %s" % [username, url])
 	socket_connected.emit(url)
 
 func _on_web_socket_closed(code, reason):
-	awaiting_ok = false
-	print("WebSocket closed with code: %d, reason '%s'. Clean: %s" % [code, reason, code != -1])
+	print("[%s] WebSocket closed with code: %d, reason '%s'. Clean: %s" % [username, code, reason, code != -1])
 	socket_closed.emit(code, reason)
 	
 func _on_web_socket_received(data: PackedByteArray):
-	print(data)
+	socket_received.emit(data)
+	
 	if data != null and len(data) > 0:
-		socket_received.emit(data)
 		var data_str : String = data.get_string_from_ascii()
-		print("Received: %s" % data_str)
-		var data_json : Dictionary = JSON.parse_string(data_str)
-		
-		if awaiting_ok:
-			awaiting_ok = false
+		print("[%s] Received: %s" % [username, data_str])
 			
-			if data_str != "":
+		if data_str != "":
+			var data_json : Dictionary = JSON.parse_string(data_str)
+			var msg_type = data_json["type"]
+			print("[%s] msg_type: %s" % [username, msg_type])
+			
+			if msg_type in ["NEW_GAME_OK", "JOIN_GAME_OK"]:
 				Globals.lobby_id = data_json["lobby_id"]
 				Globals.players = data_json["players"]
 
 				get_tree().change_scene_to_packed(in_game_scn)
+				
+			if msg_type == "PLAYER_JOINED":
+				var new_p = data_json["new_player"]
+				Globals.players.append(new_p)
+				player_joined.emit(new_p)
+				
+			if msg_type == "PLAYER_LEFT":
+				var players_left = data_json["players"]
+				Globals.players = players_left
+				player_left.emit(players_left)
 
 func _on_web_socket_connect_failed():
-	print("Socket failed to connect to server")
+	print("[%s] Socket failed to connect to server" % [username])
 	socket_connect_failed.emit()
 	
 func send_new_game(uname):
@@ -70,7 +87,6 @@ func send_new_game(uname):
 			"user_id": username,
 		}
 	})
-	awaiting_ok = true
 	
 func send_join_game(uname, lobby):
 	username = uname
@@ -82,4 +98,3 @@ func send_join_game(uname, lobby):
 			"lobby_id": lobby_id,
 		}
 	})
-	awaiting_ok = true

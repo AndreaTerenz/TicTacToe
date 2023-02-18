@@ -1,4 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://ddyeaimowxadd"]
+[gd_scene load_steps=3 format=3 uid="uid://ddyeaimowxadd"]
+
+[ext_resource type="Texture2D" uid="uid://xpgute85g4va" path="res://Icons/undo_arrow.svg" id="1_uwqj4"]
 
 [sub_resource type="GDScript" id="GDScript_1c0ut"]
 script/source = "extends Control
@@ -54,12 +56,14 @@ func _on_join_game_btn_pressed():
 	Globals.send_join_game(username, lobby_id)
 
 func _on_username_line_text_changed(new_text):
-	new_game_btn.disabled = (new_text == \"\")
-	join_game_btn.disabled = (new_text == \"\" or lobby_id == \"\")
+	toggle_buttons()
 
 func _on_lobby_id_line_text_changed(new_text):
-	print(new_text)
-	join_game_btn.disabled = (new_text == \"\" or username == \"\")
+	toggle_buttons()
+	
+func toggle_buttons():
+	new_game_btn.disabled = (username == \"\")
+	join_game_btn.disabled = (username == \"\" or lobby_id == \"\")
 
 func _on_retry_conn_btn_pressed():
 	socket.connect_socket()
@@ -172,10 +176,12 @@ custom_minimum_size = Vector2(35, 35)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-text = "R"
+tooltip_text = "Retry"
+icon = ExtResource("1_uwqj4")
+icon_alignment = 1
 
 [connection signal="text_changed" from="PanelContainer/VBoxContainer/HBoxContainer/UsernameLine" to="." method="_on_username_line_text_changed"]
-[connection signal="text_changed" from="PanelContainer/VBoxContainer/HBoxContainer3/LobbyIDLine" to="." method="_on_game_id_line_text_changed"]
+[connection signal="text_changed" from="PanelContainer/VBoxContainer/HBoxContainer3/LobbyIDLine" to="." method="_on_lobby_id_line_text_changed"]
 [connection signal="pressed" from="PanelContainer/VBoxContainer/HBoxContainer4/NewGameBtn" to="." method="_on_new_game_btn_pressed"]
 [connection signal="pressed" from="PanelContainer/VBoxContainer/HBoxContainer4/JoinGameBtn" to="." method="_on_join_game_btn_pressed"]
 [connection signal="pressed" from="PanelContainer2/HBoxContainer/RetryConnBtn" to="." method="_on_retry_conn_btn_pressed"]

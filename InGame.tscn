@@ -1,24 +1,45 @@
-[gd_scene load_steps=4 format=3 uid="uid://dsk2hw0maog87"]
+[gd_scene load_steps=5 format=3 uid="uid://dsk2hw0maog87"]
+
+[ext_resource type="Texture2D" uid="uid://dhptiq6qq1nxb" path="res://Icons/clipboard.svg" id="1_0oi7i"]
 
 [sub_resource type="GDScript" id="GDScript_g2x5t"]
 script/source = "extends Control
 
 @onready var id_label = %IDLabel
 @onready var players_list = %PlayersList
-@onready var web_socket = %WebSocket
 
-
-# Called when the node enters the scene tree for the first time.
 func _ready():
 	id_label.text = \"Lobby ID: %s\" % Globals.lobby_id
 	
 	for p in Globals.players:
 		add_player(p)
+		
+	Globals.player_joined.connect(
+		func (p):
+			add_player(p)
+	)
+		
+	Globals.player_left.connect(
+		func (_players):
+			clear_players()
+			for p in Globals.players:
+				add_player(p)
+	)
+	
+func clear_players():
+	var tot = players_list.get_child_count()
+	for kid_idx in range(0, tot):
+		var kid = players_list.get_child(0)
+		players_list.remove_child(kid)
 
 func add_player(p_name: String):
 	var lbl := Label.new()
 	lbl.text = p_name
 	players_list.add_child(lbl)
+
+
+func _on_copy_id_btn_pressed():
+	DisplayServer.clipboard_set(Globals.lobby_id)
 "
 
 [sub_resource type="LabelSettings" id="LabelSettings_2td2f"]
@@ -47,12 +68,27 @@ offset_right = 127.0
 offset_bottom = 79.0
 grow_horizontal = 2
 
-[node name="IDLabel" type="Label" parent="PanelContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="IDLabel" type="Label" parent="PanelContainer/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Lobby ID: ---"
 label_settings = SubResource("LabelSettings_2td2f")
 horizontal_alignment = 1
+
+[node name="CopyIDBtn" type="Button" parent="PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(35, 35)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+tooltip_text = "Copy"
+icon = ExtResource("1_0oi7i")
+icon_alignment = 1
+expand_icon = true
 
 [node name="PanelContainer2" type="PanelContainer" parent="."]
 layout_mode = 1
@@ -61,19 +97,25 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -113.0
-offset_top = -114.0
-offset_right = 113.0
-offset_bottom = 114.0
+offset_left = -100.0
+offset_top = -104.0
+offset_right = 100.0
+offset_bottom = 104.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PlayersList" type="VBoxContainer" parent="PanelContainer2"]
-unique_name_in_owner = true
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer2"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="PanelContainer2/PlayersList"]
+[node name="Label" type="Label" parent="PanelContainer2/VBoxContainer"]
 layout_mode = 2
 text = "Players:"
 label_settings = SubResource("LabelSettings_b887h")
 horizontal_alignment = 1
+
+[node name="PlayersList" type="VBoxContainer" parent="PanelContainer2/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[connection signal="pressed" from="PanelContainer/HBoxContainer/CopyIDBtn" to="." method="_on_copy_id_btn_pressed"]

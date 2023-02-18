@@ -1,4 +1,4 @@
-@icon("res://WebSocket.svg")
+@icon("res://Icons/WebSocket.svg")
 class_name WebSocket
 extends Node
 

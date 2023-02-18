@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://khr3xn7i13dp"
-path="res://.godot/imported/WebSocket.svg-2adb814af4a77b7946fce7d8c650224c.ctex"
+uid="uid://dhptiq6qq1nxb"
+path="res://.godot/imported/clipboard.svg-28fd05aa4a10581961bd8c4bda06b4dd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://WebSocket.svg"
-dest_files=["res://.godot/imported/WebSocket.svg-2adb814af4a77b7946fce7d8c650224c.ctex"]
+source_file="res://Icons/clipboard.svg"
+dest_files=["res://.godot/imported/clipboard.svg-28fd05aa4a10581961bd8c4bda06b4dd.ctex"]
 
 [params]
 
@@ -21,7 +21,7 @@ compress/lossy_quality=0.7
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -32,6 +32,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
+svg/scale=5.0
 editor/scale_with_editor_scale=false
 editor/convert_colors_with_editor_theme=false
