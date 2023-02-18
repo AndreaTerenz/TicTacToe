@@ -1,0 +1,136 @@
+[gd_scene load_steps=3 format=3 uid="uid://p62kxv3ebocp"]
+
+[sub_resource type="GDScript" id="GDScript_0yya3"]
+script/source = "extends PanelContainer
+
+signal cell_set(r, c)
+
+const CELL_TXT := {
+	Globals.PLAYER.EMPTY : \"\",
+	Globals.PLAYER.X : \"X\",
+	Globals.PLAYER.O : \"O\"
+}
+
+var current := Globals.PLAYER.X
+
+@onready var grid_container = $MarginContainer/GridContainer
+
+func _ready():
+	for r in range(0,3):
+		for c in range(0,3):
+			var idx = grid_pos_to_idx(r,c)
+			var btn : Button = grid_container.get_child(idx)
+			
+			btn.text = CELL_TXT[Globals.PLAYER.EMPTY]
+			btn.pressed.connect(
+				func ():
+					if can_make_move() and set_cell_at(r, c):
+						Globals.print_db(\"Emitting cell change\")
+						cell_set.emit(r,c)
+			)
+			
+func can_make_move():
+	return Globals.winner == Globals.PLAYER.EMPTY and Globals.role == current
+
+func set_cell_at(r: int, c: int, val = Globals.role, update_current := true):
+	var idx = grid_pos_to_idx(r,c)
+	var btn : Button = grid_container.get_child(idx)
+	
+	if btn.text == CELL_TXT[Globals.PLAYER.EMPTY]:
+		btn.text = CELL_TXT[val]
+		Globals.print_db(\"(%s,%s) = %s\" % [r, c, btn.text])
+		
+		if update_current:
+			current = Globals.other_role if current == Globals.role else Globals.role
+		return true
+		
+	return false
+
+func grid_pos_to_idx(r: int, c: int) -> int:
+	return r*3 + c
+
+
+"
+
+[sub_resource type="Theme" id="Theme_37cxu"]
+default_font_size = 75
+
+[node name="GameGrid" type="PanelContainer"]
+offset_right = 348.0
+offset_bottom = 381.0
+script = SubResource("GDScript_0yya3")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="GridContainer" type="GridContainer" parent="MarginContainer"]
+layout_mode = 2
+theme = SubResource("Theme_37cxu")
+columns = 3
+
+[node name="Button" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"
+
+[node name="Button2" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"
+
+[node name="Button3" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"
+
+[node name="Button4" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"
+
+[node name="Button5" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"
+
+[node name="Button6" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"
+
+[node name="Button7" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"
+
+[node name="Button8" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"
+
+[node name="Button9" type="Button" parent="MarginContainer/GridContainer"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "X"

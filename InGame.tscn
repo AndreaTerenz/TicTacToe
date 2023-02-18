@@ -1,52 +1,65 @@
-[gd_scene load_steps=5 format=3 uid="uid://dsk2hw0maog87"]
+[gd_scene load_steps=6 format=3 uid="uid://kelniiuoshlq"]
 
-[ext_resource type="Texture2D" uid="uid://dhptiq6qq1nxb" path="res://Icons/clipboard.svg" id="1_0oi7i"]
+[ext_resource type="Texture2D" uid="uid://dhptiq6qq1nxb" path="res://Icons/clipboard.svg" id="1_otdwb"]
+[ext_resource type="PackedScene" uid="uid://p62kxv3ebocp" path="res://GameGrid.tscn" id="2_5dbp7"]
 
 [sub_resource type="GDScript" id="GDScript_g2x5t"]
 script/source = "extends Control
 
 @onready var id_label = %IDLabel
-@onready var players_list = %PlayersList
+@onready var game_grid = %GameGrid
+@onready var x_name_lbl = %XNameLbl
+@onready var o_name_lbl = %ONameLbl
+
 
 func _ready():
 	id_label.text = \"Lobby ID: %s\" % Globals.lobby_id
 	
-	for p in Globals.players:
-		add_player(p)
-		
-	Globals.player_joined.connect(
-		func (p):
-			add_player(p)
-	)
+	x_name_lbl.text = Globals.players[0]
+	
+	if len(Globals.players) < 2:
+		await Globals.player_joined
+	o_name_lbl.text = Globals.players[1]
 		
 	Globals.player_left.connect(
 		func (_players):
-			clear_players()
-			for p in Globals.players:
-				add_player(p)
+			# OBVIOUS HACK
+			get_tree().quit()
 	)
 	
-func clear_players():
-	var tot = players_list.get_child_count()
-	for kid_idx in range(0, tot):
-		var kid = players_list.get_child(0)
-		players_list.remove_child(kid)
-
-func add_player(p_name: String):
-	var lbl := Label.new()
-	lbl.text = p_name
-	players_list.add_child(lbl)
+	Globals.other_moved.connect(
+		func (r,c):
+			game_grid.set_cell_at(r,c,Globals.other_role)
+	)
+	
+	Globals.gameover.connect(
+		func (w):
+			match (w):
+				Globals.PLAYER.DRAW:
+					x_name_lbl.modulate = Color.YELLOW
+					o_name_lbl.modulate = Color.YELLOW
+				Globals.PLAYER.X:
+					x_name_lbl.modulate = Color.GREEN
+					o_name_lbl.modulate = Color.RED
+				Globals.PLAYER.O:
+					x_name_lbl.modulate = Color.RED
+					o_name_lbl.modulate = Color.GREEN
+	)
 
 
 func _on_copy_id_btn_pressed():
 	DisplayServer.clipboard_set(Globals.lobby_id)
+
+
+func _on_game_grid_cell_set(r, c):
+	Globals.send_move(r, c)
 "
 
 [sub_resource type="LabelSettings" id="LabelSettings_2td2f"]
 font_size = 28
 
-[sub_resource type="LabelSettings" id="LabelSettings_b887h"]
-font_size = 22
+[sub_resource type="LabelSettings" id="LabelSettings_j4osi"]
+font_size = 20
 
 [node name="Control" type="Control"]
 layout_mode = 3
@@ -86,36 +99,89 @@ layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 tooltip_text = "Copy"
-icon = ExtResource("1_0oi7i")
+icon = ExtResource("1_otdwb")
 icon_alignment = 1
 expand_icon = true
 
-[node name="PanelContainer2" type="PanelContainer" parent="."]
+[node name="Control" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 36.0
+offset_right = -36.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GameGrid" parent="Control" instance=ExtResource("2_5dbp7")]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = -104.0
-offset_right = 100.0
-offset_bottom = 104.0
+offset_left = -189.0
+offset_top = -190.5
+offset_right = 189.0
+offset_bottom = 190.5
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer2"]
+[node name="PanelContainer" type="PanelContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -23.0
+offset_right = 110.0
+offset_bottom = 23.0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/PanelContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="PanelContainer2/VBoxContainer"]
+[node name="Label" type="Label" parent="Control/PanelContainer/VBoxContainer"]
 layout_mode = 2
-text = "Players:"
-label_settings = SubResource("LabelSettings_b887h")
+text = "Player X
+"
+label_settings = SubResource("LabelSettings_j4osi")
 horizontal_alignment = 1
 
-[node name="PlayersList" type="VBoxContainer" parent="PanelContainer2/VBoxContainer"]
+[node name="XNameLbl" type="Label" parent="Control/PanelContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 3
+text = "---"
+horizontal_alignment = 1
+
+[node name="PanelContainer2" type="PanelContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = -40.5
+offset_bottom = 40.5
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/PanelContainer2"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Control/PanelContainer2/VBoxContainer"]
+layout_mode = 2
+text = "Player O"
+label_settings = SubResource("LabelSettings_j4osi")
+horizontal_alignment = 1
+
+[node name="ONameLbl" type="Label" parent="Control/PanelContainer2/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "---"
+horizontal_alignment = 1
 
 [connection signal="pressed" from="PanelContainer/HBoxContainer/CopyIDBtn" to="." method="_on_copy_id_btn_pressed"]
+[connection signal="cell_set" from="Control/GameGrid" to="." method="_on_game_grid_cell_set"]

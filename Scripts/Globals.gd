@@ -7,6 +7,14 @@ signal socket_connect_failed
 
 signal player_joined(player)
 signal player_left(players)
+signal other_moved(r,c)
+signal gameover(winner)
+
+enum PLAYER {
+	EMPTY = 0,
+	X = 1, O = -1,
+	DRAW = 2
+}
 
 var hostname := "flask-hello-world-75s7.onrender.com"
 var ws_route := "/game-socket"
@@ -17,6 +25,9 @@ var local_mode := true
 var in_game_scn := preload("res://InGame.tscn")
 var username := ""
 var lobby_id := ""
+var role := PLAYER.EMPTY
+var other_role := PLAYER.EMPTY
+var winner := PLAYER.EMPTY
 var players : Array = []
 var socket := WebSocket.new()
 
@@ -40,11 +51,11 @@ func _ready():
 	socket.connect_failed.connect(_on_web_socket_connect_failed)
 
 func _on_web_socket_connected(url):
-	print("[%s] Socket connected to %s" % [username, url])
+	print_db("Socket connected to %s" % [url])
 	socket_connected.emit(url)
 
 func _on_web_socket_closed(code, reason):
-	print("[%s] WebSocket closed with code: %d, reason '%s'. Clean: %s" % [username, code, reason, code != -1])
+	print_db("WebSocket closed with code: %d, reason '%s'. Clean: %s" % [code, reason, code != -1])
 	socket_closed.emit(code, reason)
 	
 func _on_web_socket_received(data: PackedByteArray):
@@ -52,31 +63,51 @@ func _on_web_socket_received(data: PackedByteArray):
 	
 	if data != null and len(data) > 0:
 		var data_str : String = data.get_string_from_ascii()
-		print("[%s] Received: %s" % [username, data_str])
+		print_db("Received: %s" % [data_str])
 			
 		if data_str != "":
-			var data_json : Dictionary = JSON.parse_string(data_str)
-			var msg_type = data_json["type"]
-			print("[%s] msg_type: %s" % [username, msg_type])
+			data_str = data_str.replace("}{", "}#{")
+			var messages : PackedStringArray = data_str.split("#", false)
 			
-			if msg_type in ["NEW_GAME_OK", "JOIN_GAME_OK"]:
-				Globals.lobby_id = data_json["lobby_id"]
-				Globals.players = data_json["players"]
+			for msg_str in messages:
+				var data_json : Dictionary = JSON.parse_string(msg_str)
+				parse_message(data_json)
+			
+func parse_message(data):
+	var msg_type = data["type"]
+	print_db("msg_type: %s" % [msg_type])
+	
+	if msg_type in ["NEW_GAME_OK", "JOIN_GAME_OK"]:
+		Globals.lobby_id = data["lobby_id"]
+		Globals.players = data["players"]
+		
+		Globals.role = PLAYER.X if msg_type == "NEW_GAME_OK" else PLAYER.O
+		Globals.other_role = PLAYER.O if role == PLAYER.X else PLAYER.X
 
-				get_tree().change_scene_to_packed(in_game_scn)
-				
-			if msg_type == "PLAYER_JOINED":
-				var new_p = data_json["new_player"]
-				Globals.players.append(new_p)
-				player_joined.emit(new_p)
-				
-			if msg_type == "PLAYER_LEFT":
-				var players_left = data_json["players"]
-				Globals.players = players_left
-				player_left.emit(players_left)
+		get_tree().change_scene_to_packed(in_game_scn)
+		
+	if msg_type == "PLAYER_JOINED":
+		var new_p = data["new_player"]
+		Globals.players.append(new_p)
+		player_joined.emit(new_p)
+		
+	if msg_type == "PLAYER_LEFT":
+		var players_left = data["players"]
+		Globals.players = players_left
+		player_left.emit(players_left)
+		
+	if msg_type == "OTHER_MOVED":
+		var move_r = data["move_r"]
+		var move_c = data["move_c"]
+		
+		other_moved.emit(move_r, move_c)
+		
+	if msg_type == "GAME_OVER":
+		winner = data["winner"]
+		gameover.emit(winner)
 
 func _on_web_socket_connect_failed():
-	print("[%s] Socket failed to connect to server" % [username])
+	print_db("Socket failed to connect to server")
 	socket_connect_failed.emit()
 	
 func send_new_game(uname):
@@ -98,3 +129,16 @@ func send_join_game(uname, lobby):
 			"lobby_id": lobby_id,
 		}
 	})
+
+func send_move(r, c):
+	socket.send_dict({
+		"type": "MOVE",
+		"body": {
+			"user_id": username,
+			"move_r": r,
+			"move_c": c,
+		}
+	})
+
+func print_db(msg: String):
+	print("[%s - %s] %s" % [username, Time.get_time_string_from_system(), msg])

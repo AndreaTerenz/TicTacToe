@@ -25,8 +25,10 @@ var full_url := ""
 
 var socket := WebSocketPeer.new()
 var buffer : PackedByteArray = []
+var last_sent : PackedByteArray = []
 var last_received : PackedByteArray = []
 var received_count := 0
+var _rc := 0
 var socket_state:
 	get:
 		socket.poll()
@@ -84,14 +86,15 @@ func send_dict(dict_to_send: Dictionary):
 	send_string(s)
 	
 func send_string(str_to_send : String):
-	print("Sending: %s" % str_to_send)
+	Globals.print_db("Sending: %s" % str_to_send)
 	send(str_to_send.to_ascii_buffer())
 
 # Send bytes
 func send(to_send : PackedByteArray):
 	if not check_open():
 		return
-		
+	
+	last_sent = to_send.duplicate()
 	socket.put_packet(to_send)
 	
 func check_open():
@@ -120,15 +123,16 @@ func _process(delta):
 				connected.emit(full_url)
 			
 			var available = socket.get_available_packet_count()
-			var enable_receive = (receive_limit == 0 or (received_count < receive_limit))
+			var enable_receive = (receive_limit == 0 or (_rc < receive_limit))
 			
 			if available > 0 and enable_receive:
 				buffer.append_array(socket.get_packet())
-				received_count += 1
+				_rc += 1
 			elif len(buffer) > 0:
 				last_received = buffer.duplicate()
-				received_count = 0
+				received_count = _rc
 				received.emit(last_received)
+				_rc = 0
 				buffer.clear()
 		WebSocketPeer.STATE_CLOSING:
 			if not closing_started:
