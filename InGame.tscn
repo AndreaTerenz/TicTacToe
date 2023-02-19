@@ -14,6 +14,7 @@ script/source = "extends Control
 
 func _ready():
 	id_label.text = \"Lobby ID: %s\" % Globals.lobby_id
+	DisplayServer.clipboard_set(Globals.lobby_id)
 	
 	x_name_lbl.text = Globals.players[0]
 	

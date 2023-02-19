@@ -5,7 +5,10 @@ extends Node
 enum AUTOCONNECT_MODE {
 	NONE,
 	SELF_READY,
-	PARENT_READY
+	PARENT_READY,
+	OWNER_READY,
+	ROOT_READY,
+	CUSTOM,
 }
 
 signal connected(url)
@@ -14,12 +17,15 @@ signal received(data)
 signal closing
 signal closed(code, reason)
 
-@export var host := "127.0.0.1"
-@export var route := "/"
-@export var autoconnect_mode := AUTOCONNECT_MODE.NONE
-@export var use_WSS := true
 @export_range(0, 128) var receive_limit : int = 0
 @export_range(0, 300) var connection_timeout : int = 10
+@export_group("Routing")
+@export var host := "127.0.0.1"
+@export var route := "/"
+@export var use_WSS := true
+@export_group("Autoconnect")
+@export var autoconnect_mode := AUTOCONNECT_MODE.NONE
+@export var autoconnect_reference : Node = null
 
 var full_url := ""
 
@@ -46,8 +52,23 @@ func _ready():
 	connect_timer.one_shot = true
 	
 	if autoconnect_mode != AUTOCONNECT_MODE.NONE:
-		if autoconnect_mode == AUTOCONNECT_MODE.PARENT_READY:
-			await get_parent().ready
+		match autoconnect_mode:
+			AUTOCONNECT_MODE.PARENT_READY:
+				var par = get_parent()
+				if par != null:
+					await par.ready
+			AUTOCONNECT_MODE.OWNER_READY:
+				if owner != null:
+					await owner.ready
+			AUTOCONNECT_MODE.ROOT_READY:
+				await get_tree().root.ready
+			AUTOCONNECT_MODE.CUSTOM:
+				var ar = autoconnect_reference
+				if ar != null and ar.get_parent() == null:
+					await ar.ready
+			AUTOCONNECT_MODE.SELF_READY:
+				pass
+		
 		connect_socket()
 		
 

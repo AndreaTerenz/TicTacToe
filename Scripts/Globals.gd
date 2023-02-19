@@ -20,7 +20,7 @@ var hostname := "flask-hello-world-75s7.onrender.com"
 var ws_route := "/game-socket"
 var wss := true
 
-var local_mode := true
+var local_mode := false
 
 var in_game_scn := preload("res://InGame.tscn")
 var username := ""
