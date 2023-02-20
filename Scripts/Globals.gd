@@ -29,6 +29,10 @@ var role := PLAYER.EMPTY
 var other_role := PLAYER.EMPTY
 var winner := PLAYER.EMPTY
 var players : Array = []
+var lobby_full : bool :
+	get:
+		return len(players) == 2
+
 var socket := WebSocket.new()
 
 func _ready():

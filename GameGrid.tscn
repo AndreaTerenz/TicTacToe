@@ -30,7 +30,10 @@ func _ready():
 			)
 			
 func can_make_move():
-	return Globals.winner == Globals.PLAYER.EMPTY and Globals.role == current
+	var no_winner := (Globals.winner == Globals.PLAYER.EMPTY)
+	var your_turn := (Globals.role == current)
+	
+	return no_winner and Globals.lobby_full and your_turn
 
 func set_cell_at(r: int, c: int, val = Globals.role, update_current := true):
 	var idx = grid_pos_to_idx(r,c)
